@@ -1,7 +1,8 @@
 const UserModel = require("../models/user-model");
-const Joi = require("joi")
-const _ = require("lodash")
-const bcrypt = require ("bcrypt")
+const Joi = require("joi");
+const _ = require("lodash");
+const bcrypt = require ("bcrypt");
+const nodemailer = require('nodemailer');
 
 
 const register = async (req , res , next) => {
@@ -74,5 +75,51 @@ const login = async (req , res , next) => {
     })
 };
 
+const forget = async(req , res , next)=>{
+    try {
+        const {email} = req.body
 
-module.exports = { register , login }
+        //email ghablan boodeh ya na?
+    const user = await UserModel.getUserByEmail(email)
+    console.log(user);
+    
+    if(!user) return res.status(400).send("user doesnt exists")
+
+
+        const transporter = nodemailer.createTransport({
+            host: process.env.MAIL_HOST,
+            port: process.env.MAIL_PORT,
+            secure: false, // true for 465, false for other ports (587 in this case for STARTTLS)
+            auth: {
+                user: process.env.MAIL_USER,
+                pass: process.env.MAIL_PASSWORD
+            },
+        
+        });
+
+        const mailOptions = {
+            from: `"my app" <${process.env.MAIL_FROM}>`, // Sender address
+            to: email, // List of receivers
+            subject: 'Test Email', // Subject line
+            text: 'This is a test email sent from Node.js', // Plain text body
+            html: `<b>کد بازیابی رمز شما: ${code}</b>`, // HTML body
+            headers: {
+              "x-liara-tag": "test_email", // Tags 
+            },
+        };
+
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return console.log('Error occurred: ' + error.message);
+            }
+            console.log('Email sent: ' + info.response);
+        });
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+module.exports = { register , login , forget }
