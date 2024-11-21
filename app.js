@@ -12,6 +12,6 @@ app.use(express.urlencoded({extended: true}))
 app.use('/api/users' , userRoute)
 
 app.listen(process.env.PORT, ()=>{
-    console.log(process.env.PORT);
+    console.log("lisening to " + process.env.PORT);
     
 })

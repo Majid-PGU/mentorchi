@@ -75,6 +75,9 @@ const login = async (req , res , next) => {
     })
 };
 
+
+// Email check ...
+// it needs Host and Domain and it takes time 
 const forget = async(req , res , next)=>{
     try {
         const {email} = req.body
@@ -120,6 +123,61 @@ const forget = async(req , res , next)=>{
         next(error)
     }
 }
+// end of forget
 
 
-module.exports = { register , login , forget }
+// starting the question analys
+
+const analyzeAnswers = (req, res) => {
+    const { answers } = req.body; // Recive Array
+
+    if (!answers || !Array.isArray(answers) || answers.length !== 10) {
+        return res.status(400).send({
+            message: "Invalid input. Please provide an array of 10 answers.",
+        });
+    }
+
+    // Analys
+    let frontEndScore = 0;
+    let backEndScore = 0;
+    let uiUxScore = 0;
+
+    answers.forEach((answer, index) => {
+        if (![1, 2, 3].includes(answer)) {
+            return res.status(400).send({
+                message: `Invalid answer at question ${index + 1}. Only 1, 2, or 3 are allowed.`,
+            });
+        }
+
+        if (answer === 1) frontEndScore++;
+        if (answer === 2) backEndScore++;
+        if (answer === 3) uiUxScore++;
+    });
+
+    // Resault:
+    let result = "";
+    if (frontEndScore > backEndScore && frontEndScore > uiUxScore) {
+        result = "Front-End Development";
+    } else if (backEndScore > frontEndScore && backEndScore > uiUxScore) {
+        result = "Back-End Development";
+    } else if (uiUxScore > frontEndScore && uiUxScore > backEndScore) {
+        result = "UI/UX Design";
+    } else {
+        result = "Mixed interests. You might enjoy exploring multiple fields!";
+    }
+
+    // send resault to user
+    res.send({
+        message: "Analysis Complete",
+        data: {
+            frontEndScore,
+            backEndScore,
+            uiUxScore,
+            result,
+        },
+    });
+};
+
+// end of analys
+
+module.exports = { register, login, forget, analyzeAnswers };
