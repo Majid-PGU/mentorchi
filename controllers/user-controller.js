@@ -10,13 +10,13 @@ const register = async (req , res , next) => {
     const schema = Joi.object({
         name : Joi.string().min(3).max(50).required(),
         email : Joi.string().email({tlds : {allow : false}}).required(),
-        password : Joi.string().min(5).max(50).required()
+        password : Joi.string().min(3).max(50).required()
     });
     const validateResault = schema.validate({email, name, password});
 
     if (validateResault.error) {
         return res.status(400).send({
-            message: "Invalid email format: Please enter a valid email address.",
+            message: "name and password should be at least 3 characters and max 50 characters or your email is invalid.",
             details: validateResault.error.details[0].message
         });
     }
