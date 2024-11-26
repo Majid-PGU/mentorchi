@@ -3,6 +3,8 @@ const Joi = require("joi");
 const _ = require("lodash");
 const bcrypt = require ("bcrypt");
 const nodemailer = require('nodemailer');
+const db = require("../utilities/mysql_database");
+const crypto = require("crypto");
 
 
 //Registering...
@@ -104,6 +106,9 @@ const login = async (req , res , next) => {
 
 
 
+
+
+
 //Questions
 const analyzeAnswers = (req, res) => {
     const { answers } = req.body; // recive inputs
@@ -153,90 +158,99 @@ const analyzeAnswers = (req, res) => {
     });
 };
 
+
+
+
+
+
+
+
 //Forget Password
 // درخواست فراموشی رمز عبور
 const forgotPassword = async (req, res) => {
-    const { email } = req.body;
-  
-    // اعتبارسنجی ایمیل
-    const schema = Joi.object({
-      email: Joi.string().email({ tlds: { allow: false } }).required(),
-    });
-  
-    const { error } = schema.validate({ email });
-    if (error) return res.status(400).send({ message: error.details[0].message });
-  
-    try {
-      // بررسی وجود ایمیل در پایگاه داده
-      const [user] = await db.execute("SELECT id, email FROM users WHERE email = ?", [email]);
-      if (user.length === 0) {
-        return res.status(404).send({ message: "User with this email does not exist." });
-      }
-  
-      // تولید توکن بازیابی رمز عبور
-      const resetToken = crypto.randomBytes(32).toString("hex");
-      const hashedToken = await bcrypt.hash(resetToken, 10);
-  
-      // ذخیره توکن و تاریخ انقضا در پایگاه داده
-      await db.execute(
-        "UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?",
-        [hashedToken, Date.now() + 3600000, email] // انقضا: 1 ساعت
-      );
-  
-      // ارسال پاسخ به کلاینت
-      res.send({
-        message: "Password reset token generated successfully.",
-        resetToken, // اختیاری: فقط برای توسعه‌دهنده نمایش داده شود
-      });
-  
-      // اینجا می‌توانید از nodemailer برای ارسال ایمیل استفاده کنید
-      // مثلا لینک: `http://your-app/reset-password?token=${resetToken}`
-    } catch (err) {
-      console.error(err);
-      res.status(500).send({ message: "An error occurred while processing the request." });
+  const { email } = req.body;
+
+  // اعتبارسنجی ایمیل
+  const schema = Joi.object({
+    email: Joi.string().email({ tlds: { allow: false } }).required(),
+  });
+
+  const { error } = schema.validate({ email });
+  if (error) return res.status(400).send({ message: error.details[0].message });
+
+  try {
+    // بررسی وجود ایمیل در پایگاه داده
+    const [user] = await db.execute("SELECT id, email FROM persons WHERE email = ?", [email]);
+    if (user.length === 0) {
+      return res.status(404).send({ message: "User with this email does not exist." });
     }
-  };
-  
-  // تغییر رمز عبور
-  const resetPassword = async (req, res) => {
-    const { token, newPassword } = req.body;
-  
-    // اعتبارسنجی ورودی‌ها
-    const schema = Joi.object({
-      token: Joi.string().required(),
-      newPassword: Joi.string().min(5).max(50).required(),
+
+    // تولید توکن بازیابی رمز عبور
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = await bcrypt.hash(resetToken, 10);
+
+    // ذخیره توکن و تاریخ انقضا در پایگاه داده
+    await db.execute(
+      "UPDATE persons SET reset_token = ?, reset_token_expiry = ? WHERE email = ?",
+      [hashedToken, Date.now() + 3600000, email] // انقضا: 1 ساعت
+    );
+
+    res.send({
+      message: "Password reset token generated successfully.",
+      resetToken, // فقط برای توسعه‌دهنده
     });
-  
-    const { error } = schema.validate({ token, newPassword });
-    if (error) return res.status(400).send({ message: error.details[0].message });
-  
-    try {
-      // جستجوی توکن در پایگاه داده
-      const [user] = await db.execute("SELECT * FROM users WHERE reset_token IS NOT NULL");
-      if (user.length === 0 || !(await bcrypt.compare(token, user[0].reset_token))) {
-        return res.status(400).send({ message: "Invalid or expired reset token." });
-      }
-  
-      // بررسی انقضای توکن
-      if (user[0].reset_token_expiry < Date.now()) {
-        return res.status(400).send({ message: "Reset token has expired." });
-      }
-  
-      // هش کردن رمز عبور جدید
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-  
-      // ذخیره رمز عبور جدید و حذف توکن
-      await db.execute(
-        "UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
-        [hashedPassword, user[0].id]
-      );
-  
-      res.send({ message: "Password has been reset successfully." });
-    } catch (err) {
-      console.error(err);
-      res.status(500).send({ message: "An error occurred while resetting the password." });
+
+    // ارسال ایمیل (اختیاری) با لینک شامل توکن بازنشانی
+    // مثلا: `http://your-app/reset-password?token=${resetToken}`
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: "An error occurred while processing the request." });
+  }
+};
+
+// تغییر رمز عبور
+const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  // اعتبارسنجی ورودی‌ها
+  const schema = Joi.object({
+    token: Joi.string().required(),
+    newPassword: Joi.string().min(5).max(50).required(),
+  });
+
+  const { error } = schema.validate({ token, newPassword });
+  if (error) return res.status(400).send({ message: error.details[0].message });
+
+  try {
+    // جستجوی توکن در پایگاه داده
+    const [user] = await db.execute("SELECT * FROM persons WHERE reset_token IS NOT NULL");
+    if (
+      user.length === 0 ||
+      !(await bcrypt.compare(token, user[0].reset_token))
+    ) {
+      return res.status(400).send({ message: "Invalid or expired reset token." });
     }
-  };
+
+    // بررسی انقضای توکن
+    if (user[0].reset_token_expiry < Date.now()) {
+      return res.status(400).send({ message: "Reset token has expired." });
+    }
+
+    // هش کردن رمز عبور جدید
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // ذخیره رمز عبور جدید و حذف توکن
+    await db.execute(
+      "UPDATE persons SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
+      [hashedPassword, user[0].id]
+    );
+
+    res.send({ message: "Password has been reset successfully." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: "An error occurred while resetting the password." });
+  }
+};
 
 
 module.exports = { register, login, analyzeAnswers , forgotPassword, resetPassword, };
