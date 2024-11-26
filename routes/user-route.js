@@ -8,7 +8,6 @@ router.get('/:pass', async (req,res,next)=> {
 })
 router.post("/register" , userController.register)
 router.post("/login" , userController.login)
-router.post("/forget" , userController.forget)
 router.post("/analyze-answers", userController.analyzeAnswers);
 
 module.exports = router

@@ -5,46 +5,71 @@ const bcrypt = require ("bcrypt");
 const nodemailer = require('nodemailer');
 
 
-const register = async (req , res , next) => {
-    const {email, name, password} = req.body;
+//Registering...
+const register = async (req, res, next) => {
+    const { email, name, password } = req.body;
+
     const schema = Joi.object({
-        name : Joi.string().min(3).max(50).required(),
-        email : Joi.string().email({tlds : {allow : false}}).required(),
-        password : Joi.string().min(3).max(50).required()
+        name: Joi.string().min(3).max(50).required().messages({
+            "string.base": "Name must be a string.",
+            "string.empty": "Name is required.",
+            "string.min": "Name should have at least 3 characters.",
+            "string.max": "Name should not exceed 50 characters.",
+            "any.required": "Name is required."
+        }),
+        email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+            "string.email": "Invalid email format.",
+            "string.empty": "Email is required.",
+            "any.required": "Email is required."
+        }),
+        password: Joi.string().min(3).max(50).required().messages({
+            "string.base": "Password must be a string.",
+            "string.empty": "Password is required.",
+            "string.min": "Password should have at least 3 characters.",
+            "string.max": "Password should not exceed 50 characters.",
+            "any.required": "Password is required."
+        })
     });
-    const validateResault = schema.validate({email, name, password});
 
-    if (validateResault.error) {
-        return res.status(400).send({
-            message: "name and password should be at least 3 characters and max 50 characters or your email is invalid.",
-            details: validateResault.error.details[0].message
-        });
-    }
-    
-    const hashPassword = await bcrypt.hash(password , 10)
-    
-    console.log({email, name, password: hashPassword});
-    
-    //email ghablan boodeh ya na?
-    const user = await UserModel.getUserByEmail(email)
-    console.log(user);
-    
-    if(user) return res.status(400).send("user already exists")
+    const validateResult = schema.validate({ email, name, password }, { abortEarly: false });
 
+    if (validateResult.error) {
+        
+        const errorDetails = validateResult.error.details.map(err => ({
+            field: err.context.key,
+            message: err.message
+        }));
 
         
-    const resault = await UserModel.insertUser(
-        name ,
-        email ,
-        hashPassword
-        );
-    console.log(resault)
+        return res.status(400).send({
+            message: "Validation errors occurred.",
+            errors: errorDetails
+        });
+    }
 
-    const newUser = await UserModel.getUserByEmail(req.body.email)
+    const hashPassword = await bcrypt.hash(password, 10);
 
+    console.log({ email, name, password: hashPassword });
 
-    res.send(_.pick(newUser , ["id" , "name" , "email"]))
+    const user = await UserModel.getUserByEmail(email);
+    console.log(user);
+
+    if (user) return res.status(400).send("User already exists");
+
+    const result = await UserModel.insertUser(name, email, hashPassword);
+    console.log(result);
+
+    const newUser = await UserModel.getUserByEmail(req.body.email);
+
+    res.send(_.pick(newUser, ["id", "name", "email"]));
 };
+
+//Register finished
+
+
+
+
+//login
 
 const login = async (req , res , next) => {
     console.log(req.body);
@@ -75,68 +100,22 @@ const login = async (req , res , next) => {
     })
 };
 
-
-// Email check ...
-// it needs Host and Domain and it takes time 
-const forget = async(req , res , next)=>{
-    try {
-        const {email} = req.body
-
-        //email ghablan boodeh ya na?
-    const user = await UserModel.getUserByEmail(email)
-    console.log(user);
-    
-    if(!user) return res.status(400).send("user doesnt exists")
+//end of login
 
 
-        const transporter = nodemailer.createTransport({
-            host: process.env.MAIL_HOST,
-            port: process.env.MAIL_PORT,
-            secure: false, // true for 465, false for other ports (587 in this case for STARTTLS)
-            auth: {
-                user: process.env.MAIL_USER,
-                pass: process.env.MAIL_PASSWORD
-            },
-        
-        });
 
-        const mailOptions = {
-            from: `"my app" <${process.env.MAIL_FROM}>`, // Sender address
-            to: email, // List of receivers
-            subject: 'Test Email', // Subject line
-            text: 'This is a test email sent from Node.js', // Plain text body
-            html: `<b>کد بازیابی رمز شما: ${code}</b>`, // HTML body
-            headers: {
-              "x-liara-tag": "test_email", // Tags 
-            },
-        };
-
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                return console.log('Error occurred: ' + error.message);
-            }
-            console.log('Email sent: ' + info.response);
-        });
-
-    } catch (error) {
-        next(error)
-    }
-}
-// end of forget
-
-// question analys
+//Questions
 const analyzeAnswers = (req, res) => {
-    const { answers } = req.body; // recive answers
+    const { answers } = req.body; // recive inputs
 
-    // checking input
+    // checking inputs
     if (!answers || !Array.isArray(answers) || answers.length !== 10) {
         return res.status(400).send({
             message: "Invalid input. Please provide an array of 10 answers.",
         });
     }
 
-    // analys
+    // analysing
     let frontEndScore = 0;
     let backEndScore = 0;
     let uiUxScore = 0;
@@ -153,30 +132,111 @@ const analyzeAnswers = (req, res) => {
         if (answer === 3) uiUxScore++;
     });
 
-    // resault
+    // set resault
     let result = "";
     if (frontEndScore > backEndScore && frontEndScore > uiUxScore) {
         result = "به دنیای توسعه فرانت‌اند خوش آمدید! جایی که خلاقیت و ساختار در کنار هم قرار می‌گیرند و به شما امکان می‌دهند طراحی‌های بصری را زنده کنید و تجربیات وب تعاملی و کاربرپسند بسازید. با ابزارهایی مانند HTML، CSS و JavaScript، می‌توانید طرح‌بندی‌ها را شکل دهید، انیمیشن اضافه کنید و وب‌سایت‌هایی بسازید که استفاده از آن‌ها ساده و جذاب باشد. این یک مسیر شغلی پر از خلاقیت، حل مسئله و فرصتی برای خلق تجربیات دیجیتالی به‌یادماندنی است. آماده‌اید ایده‌ها را به واقعیت تبدیل کنید؟ شروع کنیم!";
     } else if (backEndScore > frontEndScore && backEndScore > uiUxScore) {
-        result = "به دنیای توسعه بک‌اند خوش آمدید! اگر از حل مسائل منطقی و ساخت سیستم‌های کارآمد لذت می‌برید، این مسیر مناسب شماست. توسعه بک‌اند شامل مدیریت سرورها، پایگاه‌های داده و منطق پشت صحنه است که عملکرد نرم‌افزارها را ممکن می‌سازد. با مهارت‌هایی مانند کار با پایگاه‌ داده و برنامه‌نویسی سمت سرور، می‌توانید سیستم‌هایی بسازید که روان و قابل اعتماد کار کنند. این یک فرصت عالی برای کسانی است که به دنبال چالش‌های فنی و ساخت پایه‌های قوی برای اپلیکیشن‌ها هستند. آماده‌اید پشت صحنه تکنولوژی بدرخشید؟ شروع کنیم ";
+        result = "به دنیای توسعه بک‌اند خوش آمدید! اگر از حل مسائل منطقی و ساخت سیستم‌های کارآمد لذت می‌برید، این مسیر مناسب شماست. توسعه بک‌اند شامل مدیریت سرورها، پایگاه‌های داده و منطق پشت صحنه است که عملکرد نرم‌افزارها را ممکن می‌سازد. با مهارت‌هایی مانند کار با پایگاه‌ داده و برنامه‌نویسی سمت سرور، می‌توانید سیستم‌هایی بسازید که روان و قابل اعتماد کار کنند. این یک فرصت عالی برای کسانی است که به دنبال چالش‌های فنی و ساخت پایه‌های قوی برای اپلیکیشن‌ها هستند. آماده‌اید پشت صحنه تکنولوژی بدرخشید؟ شروع کنیم";
     } else if (uiUxScore > frontEndScore && uiUxScore > backEndScore) {
-        result = " به دنیای طراحی UI/UX خوش آمدید! اینجا جایی است که خلاقیت و درک نیازهای کاربران به هم می‌رسند تا تجربه‌های دیجیتال به‌یادماندنی خلق شود. طراحی UI/UX شامل ساخت رابط‌هایی است که هم جذاب و زیبا باشند و هم استفاده از آن‌ها آسان باشد. با تمرکز بر کاربر و جزئیات، می‌توانید محصولاتی بسازید که نیازهای واقعی کاربران را برآورده کنند. اگر به خلاقیت و همدلی علاقه دارید و می‌خواهید مشکلات را به راه‌حل‌های هوشمندانه تبدیل کنید، این مسیر پر از فرصت برای ساخت تجربه‌های بهتر است. آماده‌اید طراحی را شروع کنید؟ بیایید قدم برداریم!";
+        result = "به دنیای طراحی UI/UX خوش آمدید! اینجا جایی است که خلاقیت و درک نیازهای کاربران به هم می‌رسند تا تجربه‌های دیجیتال به‌یادماندنی خلق شود. طراحی UI/UX شامل ساخت رابط‌هایی است که هم جذاب و زیبا باشند و هم استفاده از آن‌ها آسان باشد. با تمرکز بر کاربر و جزئیات، می‌توانید محصولاتی بسازید که نیازهای واقعی کاربران را برآورده کنند. اگر به خلاقیت و همدلی علاقه دارید و می‌خواهید مشکلات را به راه‌حل‌های هوشمندانه تبدیل کنید، این مسیر پر از فرصت برای ساخت تجربه‌های بهتر است. آماده‌اید طراحی را شروع کنید؟ بیایید قدم برداریم!";
     } else {
-        result = "Mixed interests. You might enjoy exploring multiple fields!";
+        result = "error ==> equal fields";
     }
 
-    // send to user
+    // send resault
     res.send({
         message: "Analysis Complete",
         data: {
-            frontEndScore,
-            backEndScore,
-            uiUxScore,
-            result,  // result
+            result,  // just resault
         },
     });
 };
 
-// end of question analys
+//Forget Password
+// درخواست فراموشی رمز عبور
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+  
+    // اعتبارسنجی ایمیل
+    const schema = Joi.object({
+      email: Joi.string().email({ tlds: { allow: false } }).required(),
+    });
+  
+    const { error } = schema.validate({ email });
+    if (error) return res.status(400).send({ message: error.details[0].message });
+  
+    try {
+      // بررسی وجود ایمیل در پایگاه داده
+      const [user] = await db.execute("SELECT id, email FROM users WHERE email = ?", [email]);
+      if (user.length === 0) {
+        return res.status(404).send({ message: "User with this email does not exist." });
+      }
+  
+      // تولید توکن بازیابی رمز عبور
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const hashedToken = await bcrypt.hash(resetToken, 10);
+  
+      // ذخیره توکن و تاریخ انقضا در پایگاه داده
+      await db.execute(
+        "UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?",
+        [hashedToken, Date.now() + 3600000, email] // انقضا: 1 ساعت
+      );
+  
+      // ارسال پاسخ به کلاینت
+      res.send({
+        message: "Password reset token generated successfully.",
+        resetToken, // اختیاری: فقط برای توسعه‌دهنده نمایش داده شود
+      });
+  
+      // اینجا می‌توانید از nodemailer برای ارسال ایمیل استفاده کنید
+      // مثلا لینک: `http://your-app/reset-password?token=${resetToken}`
+    } catch (err) {
+      console.error(err);
+      res.status(500).send({ message: "An error occurred while processing the request." });
+    }
+  };
+  
+  // تغییر رمز عبور
+  const resetPassword = async (req, res) => {
+    const { token, newPassword } = req.body;
+  
+    // اعتبارسنجی ورودی‌ها
+    const schema = Joi.object({
+      token: Joi.string().required(),
+      newPassword: Joi.string().min(5).max(50).required(),
+    });
+  
+    const { error } = schema.validate({ token, newPassword });
+    if (error) return res.status(400).send({ message: error.details[0].message });
+  
+    try {
+      // جستجوی توکن در پایگاه داده
+      const [user] = await db.execute("SELECT * FROM users WHERE reset_token IS NOT NULL");
+      if (user.length === 0 || !(await bcrypt.compare(token, user[0].reset_token))) {
+        return res.status(400).send({ message: "Invalid or expired reset token." });
+      }
+  
+      // بررسی انقضای توکن
+      if (user[0].reset_token_expiry < Date.now()) {
+        return res.status(400).send({ message: "Reset token has expired." });
+      }
+  
+      // هش کردن رمز عبور جدید
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+      // ذخیره رمز عبور جدید و حذف توکن
+      await db.execute(
+        "UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
+        [hashedPassword, user[0].id]
+      );
+  
+      res.send({ message: "Password has been reset successfully." });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send({ message: "An error occurred while resetting the password." });
+    }
+  };
 
-module.exports = { register, login, forget, analyzeAnswers };
+
+module.exports = { register, login, analyzeAnswers , forgotPassword, resetPassword, };
