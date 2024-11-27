@@ -266,4 +266,40 @@ const resetPassword = async (req, res) => {
 };
 
 
-module.exports = { register, login, analyzeAnswers , forgotPassword, resetPassword, };
+
+
+//Change password with old pass
+
+const changePassword = async (req, res) => {
+    const { email, oldPassword, newPassword } = req.body;
+
+    try {
+        // مرحله ۱: بررسی اینکه کاربر با ایمیل وارد شده وجود دارد
+        const [user] = await db.execute('SELECT * FROM persons WHERE email = ?', [email]);
+        if (user.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // مرحله ۲: بررسی پسورد قدیمی
+        const validPassword = await bcrypt.compare(oldPassword, user[0].password);
+        if (!validPassword) {
+            return res.status(400).json({ message: 'Invalid old password' });
+        }
+
+        // مرحله ۳: هش کردن پسورد جدید
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // مرحله ۴: ذخیره پسورد جدید در دیتابیس
+        await db.execute('UPDATE persons SET password = ? WHERE email = ?', [hashedPassword, email]);
+
+        res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+
+
+
+module.exports = { register, login, analyzeAnswers , forgotPassword, resetPassword, changePassword };
