@@ -137,35 +137,44 @@ const analyzeAnswers = (req, res) => {
         if (answer === 3) uiUxScore++;
     });
 
-    // تعیین نتیجه بر اساس امتیازات
+    // scores
     let result = "";
+    let header = "";
 
     if (uiUxScore > frontEndScore && uiUxScore > backEndScore) {
         result = "به دنیای طراحی UI/UX خوش آمدید! اینجا جایی است که خلاقیت و درک نیازهای کاربران به هم می‌رسند تا تجربه‌های دیجیتال به‌یادماندنی خلق شود. طراحی UI/UX شامل ساخت رابط‌هایی است که هم جذاب و زیبا باشند و هم استفاده از آن‌ها آسان باشد. با تمرکز بر کاربر و جزئیات، می‌توانید محصولاتی بسازید که نیازهای واقعی کاربران را برآورده کنند. اگر به خلاقیت و همدلی علاقه دارید و می‌خواهید مشکلات را به راه‌حل‌های هوشمندانه تبدیل کنید، این مسیر پر از فرصت برای ساخت تجربه‌های بهتر است. آماده‌اید طراحی را شروع کنید؟ بیایید قدم برداریم!";
+        header = "UI/UX طراحی"
     } else if (frontEndScore > backEndScore && frontEndScore > uiUxScore) {
         result = "به دنیای توسعه فرانت‌اند خوش آمدید! جایی که خلاقیت و ساختار در کنار هم قرار می‌گیرند و به شما امکان می‌دهند طراحی‌های بصری را زنده کنید و تجربیات وب تعاملی و کاربرپسند بسازید. با ابزارهایی مانند HTML، CSS و JavaScript، می‌توانید طرح‌بندی‌ها را شکل دهید، انیمیشن اضافه کنید و وب‌سایت‌هایی بسازید که استفاده از آن‌ها ساده و جذاب باشد. این یک مسیر شغلی پر از خلاقیت، حل مسئله و فرصتی برای خلق تجربیات دیجیتالی به‌یادماندنی است. آماده‌اید ایده‌ها را به واقعیت تبدیل کنید؟ شروع کنیم!";
+        header = "توسعه فرانت‌اند"
     } else if (backEndScore > frontEndScore && backEndScore > uiUxScore) {
         result = "به دنیای توسعه بک‌اند خوش آمدید! اگر از حل مسائل منطقی و ساخت سیستم‌های کارآمد لذت می‌برید، این مسیر مناسب شماست. توسعه بک‌اند شامل مدیریت سرورها، پایگاه‌های داده و منطق پشت صحنه است که عملکرد نرم‌افزارها را ممکن می‌سازد. با مهارت‌هایی مانند کار با پایگاه‌ داده و برنامه‌نویسی سمت سرور، می‌توانید سیستم‌هایی بسازید که روان و قابل اعتماد کار کنند. این یک فرصت عالی برای کسانی است که به دنبال چالش‌های فنی و ساخت پایه‌های قوی برای اپلیکیشن‌ها هستند. آماده‌اید پشت صحنه تکنولوژی بدرخشید؟ شروع کنیم";
+        header = "توسعه بک‌اند"
     } else {
-        // بررسی تساوی و اولویت‌بندی
+        // olaviat bandy
         if (uiUxScore === frontEndScore && uiUxScore === backEndScore) {
             result = "به دنیای طراحی UI/UX خوش آمدید! اینجا جایی است که خلاقیت و درک نیازهای کاربران به هم می‌رسند تا تجربه‌های دیجیتال به‌یادماندنی خلق شود. طراحی UI/UX شامل ساخت رابط‌هایی است که هم جذاب و زیبا باشند و هم استفاده از آن‌ها آسان باشد. با تمرکز بر کاربر و جزئیات، می‌توانید محصولاتی بسازید که نیازهای واقعی کاربران را برآورده کنند. اگر به خلاقیت و همدلی علاقه دارید و می‌خواهید مشکلات را به راه‌حل‌های هوشمندانه تبدیل کنید، این مسیر پر از فرصت برای ساخت تجربه‌های بهتر است. آماده‌اید طراحی را شروع کنید؟ بیایید قدم برداریم!";
+            header = "UI/UX طراحی"
         } else if (uiUxScore === frontEndScore && uiUxScore > backEndScore) {
             result = "به دنیای طراحی UI/UX خوش آمدید! اینجا جایی است که خلاقیت و درک نیازهای کاربران به هم می‌رسند تا تجربه‌های دیجیتال به‌یادماندنی خلق شود. طراحی UI/UX شامل ساخت رابط‌هایی است که هم جذاب و زیبا باشند و هم استفاده از آن‌ها آسان باشد. با تمرکز بر کاربر و جزئیات، می‌توانید محصولاتی بسازید که نیازهای واقعی کاربران را برآورده کنند. اگر به خلاقیت و همدلی علاقه دارید و می‌خواهید مشکلات را به راه‌حل‌های هوشمندانه تبدیل کنید، این مسیر پر از فرصت برای ساخت تجربه‌های بهتر است. آماده‌اید طراحی را شروع کنید؟ بیایید قدم برداریم!";
+            header = "UI/UX طراحی"
         } else if (uiUxScore === backEndScore && uiUxScore > frontEndScore) {
             result = "به دنیای طراحی UI/UX خوش آمدید! اینجا جایی است که خلاقیت و درک نیازهای کاربران به هم می‌رسند تا تجربه‌های دیجیتال به‌یادماندنی خلق شود. طراحی UI/UX شامل ساخت رابط‌هایی است که هم جذاب و زیبا باشند و هم استفاده از آن‌ها آسان باشد. با تمرکز بر کاربر و جزئیات، می‌توانید محصولاتی بسازید که نیازهای واقعی کاربران را برآورده کنند. اگر به خلاقیت و همدلی علاقه دارید و می‌خواهید مشکلات را به راه‌حل‌های هوشمندانه تبدیل کنید، این مسیر پر از فرصت برای ساخت تجربه‌های بهتر است. آماده‌اید طراحی را شروع کنید؟ بیایید قدم برداریم!";
+            header = "UI/UX طراحی"
         } else if (frontEndScore === backEndScore && frontEndScore > uiUxScore) {
             result = "به دنیای توسعه فرانت‌اند خوش آمدید! جایی که خلاقیت و ساختار در کنار هم قرار می‌گیرند و به شما امکان می‌دهند طراحی‌های بصری را زنده کنید و تجربیات وب تعاملی و کاربرپسند بسازید. با ابزارهایی مانند HTML، CSS و JavaScript، می‌توانید طرح‌بندی‌ها را شکل دهید، انیمیشن اضافه کنید و وب‌سایت‌هایی بسازید که استفاده از آن‌ها ساده و جذاب باشد. این یک مسیر شغلی پر از خلاقیت، حل مسئله و فرصتی برای خلق تجربیات دیجیتالی به‌یادماندنی است. آماده‌اید ایده‌ها را به واقعیت تبدیل کنید؟ شروع کنیم!";
+            header = "توسعه فرانت‌اند"
         } else {
             result = "!!!";
         }
     }
 
-    // ارسال نتیجه
+    // send resault
     res.send({
         message: "Analysis Complete",
         data: {
-            result,  // نتیجه نهایی
+          header,
+          result,
         },
     });
 };
@@ -179,11 +188,10 @@ const analyzeAnswers = (req, res) => {
 
 
 //Forget Password
-// درخواست فراموشی رمز عبور
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
-  // اعتبارسنجی ایمیل
+  // email validation
   const schema = Joi.object({
     email: Joi.string().email({ tlds: { allow: false } }).required(),
   });
@@ -192,17 +200,17 @@ const forgotPassword = async (req, res) => {
   if (error) return res.status(400).send({ message: error.details[0].message });
 
   try {
-    // بررسی وجود ایمیل در پایگاه داده
+    // check database
     const [user] = await db.execute("SELECT id, email FROM persons WHERE email = ?", [email]);
     if (user.length === 0) {
       return res.status(404).send({ message: "User with this email does not exist." });
     }
 
-    // تولید توکن بازیابی رمز عبور
+    // token
     const resetToken = crypto.randomBytes(32).toString("hex");
     const hashedToken = await bcrypt.hash(resetToken, 10);
 
-    // ذخیره توکن و تاریخ انقضا در پایگاه داده
+    // expire
     await db.execute(
       "UPDATE persons SET reset_token = ?, reset_token_expiry = ? WHERE email = ?",
       [hashedToken, Date.now() + 3600000, email] // انقضا: 1 ساعت
@@ -210,22 +218,18 @@ const forgotPassword = async (req, res) => {
 
     res.send({
       message: "Password reset token generated successfully.",
-      resetToken, // فقط برای توسعه‌دهنده
+      resetToken, 
     });
 
-    // ارسال ایمیل (اختیاری) با لینک شامل توکن بازنشانی
-    // مثلا: `http://your-app/reset-password?token=${resetToken}`
   } catch (err) {
     console.error(err);
     res.status(500).send({ message: "An error occurred while processing the request." });
   }
 };
 
-// تغییر رمز عبور
 const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
 
-  // اعتبارسنجی ورودی‌ها
   const schema = Joi.object({
     token: Joi.string().required(),
     newPassword: Joi.string().min(5).max(50).required(),
@@ -235,7 +239,6 @@ const resetPassword = async (req, res) => {
   if (error) return res.status(400).send({ message: error.details[0].message });
 
   try {
-    // جستجوی توکن در پایگاه داده
     const [user] = await db.execute("SELECT * FROM persons WHERE reset_token IS NOT NULL");
     if (
       user.length === 0 ||
@@ -244,15 +247,12 @@ const resetPassword = async (req, res) => {
       return res.status(400).send({ message: "Invalid or expired reset token." });
     }
 
-    // بررسی انقضای توکن
     if (user[0].reset_token_expiry < Date.now()) {
       return res.status(400).send({ message: "Reset token has expired." });
     }
 
-    // هش کردن رمز عبور جدید
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // ذخیره رمز عبور جدید و حذف توکن
     await db.execute(
       "UPDATE persons SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
       [hashedPassword, user[0].id]
