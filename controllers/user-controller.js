@@ -5,6 +5,8 @@ const bcrypt = require ("bcrypt");
 const nodemailer = require('nodemailer');
 const db = require("../utilities/mysql_database");
 const crypto = require("crypto");
+const jwt = require('jsonwebtoken');
+
 
 
 //Registering...
@@ -73,34 +75,68 @@ const register = async (req, res, next) => {
 
 //login
 
-const login = async (req , res , next) => {
-    console.log(req.body);
-    const schema = {
-        
-        email : Joi.string().email().required(),
-        password : Joi.string().min(5).max(50).required()
-    }
-    const validateResault = Joi.object(schema).validate(req.body)
-    if (validateResault.err)
-      return res.send(validateResault.err.details[0].message)
+const login = async (req, res, next) => {
+    try {
+        console.log(req.body);
 
-    const user = await UserModel.getUserByEmail(req.body.email)
-    if (!user) return res.status(400).send({
-        message: "email or password is invalid"
-    })
+        // validate inputs
+        const schema = Joi.object({
+            email: Joi.string().email().required().messages({
+                "string.email": "Invalid email format.",
+                "any.required": "Email is required."
+            }),
+            password: Joi.string().min(5).max(50).required().messages({
+                "string.min": "Password must be at least 5 characters.",
+                "any.required": "Password is required."
+            })
+        });
 
-    const validPassword = await bcrypt.compare(req.body.password , user.password)
-    if(!validPassword) return res.status(400).send({
-        message: "the user or password is invalid"
-    })
-    console.log("success");
-    res.send({
-        message:"sucessfully",
-        data:{
-            // token
+        const { error } = schema.validate(req.body);
+        if (error) {
+            return res.status(400).send({
+                message: error.details[0].message
+            });
         }
-    })
+
+        // uder existing in db?
+        const user = await UserModel.getUserByEmail(req.body.email);
+        if (!user) {
+            return res.status(400).send({
+                message: "Email or password is invalid."
+            });
+        }
+
+        // validate password
+        const validPassword = await bcrypt.compare(req.body.password, user.password);
+        if (!validPassword) {
+            return res.status(400).send({
+                message: "Email or password is invalid."
+            });
+        }
+
+        // generate token
+        const token = jwt.sign(
+            { id: user.id, email: user.email }, // information in token
+            process.env.JWT_SECRET,            // signature for token
+            { expiresIn: '1h' }                // expire -->1h
+        );
+
+        // success full message
+        res.status(200).send({
+            message: "Successfully logged in.",
+            data: {
+                token
+            }
+        });
+
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).send({
+            message: "An internal server error occurred."
+        });
+    }
 };
+
 
 //end of login
 
