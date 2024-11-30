@@ -147,16 +147,16 @@ const login = async (req, res, next) => {
 
 //Questions
 const analyzeAnswers = (req, res) => {
-    const { answers } = req.body; // دریافت ورودی‌ها
+    const { answers } = req.body;
 
-    // بررسی ورودی‌ها
+    
     if (!answers || !Array.isArray(answers) || answers.length !== 10) {
         return res.status(400).send({
             message: "Invalid input. Please provide an array of 10 answers.",
         });
     }
 
-    // تحلیل ورودی‌ها
+    
     let frontEndScore = 0;
     let backEndScore = 0;
     let uiUxScore = 0;
@@ -174,6 +174,7 @@ const analyzeAnswers = (req, res) => {
     });
 
     // scores
+    
     let result = "";
     let header = "";
 
@@ -243,7 +244,7 @@ const forgotPassword = async (req, res) => {
     }
 
     // token
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetToken = (parseInt(crypto.randomBytes(3).toString("hex"), 16) % 1000000).toString().padStart(6, "0");
     const hashedToken = await bcrypt.hash(resetToken, 10);
 
     // expire
@@ -252,9 +253,10 @@ const forgotPassword = async (req, res) => {
       [hashedToken, Date.now() + 3600000, email] // انقضا: 1 ساعت
     );
 
+    console.log("This must send as Email ---> "+ " " + resetToken)
+
     res.send({
-      message: "Password reset token generated successfully.",
-      resetToken, 
+      message: "Password reset token generated successfully.", 
     });
 
   } catch (err) {
@@ -262,6 +264,10 @@ const forgotPassword = async (req, res) => {
     res.status(500).send({ message: "An error occurred while processing the request." });
   }
 };
+
+
+
+
 
 const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
@@ -310,22 +316,22 @@ const changePassword = async (req, res) => {
     const { email, oldPassword, newPassword } = req.body;
 
     try {
-        // مرحله ۱: بررسی اینکه کاربر با ایمیل وارد شده وجود دارد
+        // user exist with given email?
         const [user] = await db.execute('SELECT * FROM persons WHERE email = ?', [email]);
         if (user.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // مرحله ۲: بررسی پسورد قدیمی
+        // checking old pass
         const validPassword = await bcrypt.compare(oldPassword, user[0].password);
         if (!validPassword) {
             return res.status(400).json({ message: 'Invalid old password' });
         }
 
-        // مرحله ۳: هش کردن پسورد جدید
+        // hash pass
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // مرحله ۴: ذخیره پسورد جدید در دیتابیس
+        // save new pass to db
         await db.execute('UPDATE persons SET password = ? WHERE email = ?', [hashedPassword, email]);
 
         res.status(200).json({ message: 'Password updated successfully' });
