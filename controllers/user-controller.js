@@ -6,6 +6,7 @@ const nodemailer = require('nodemailer');
 const db = require("../utilities/mysql_database");
 const crypto = require("crypto");
 const jwt = require('jsonwebtoken');
+const {sendMessageToAI} = require("../AI/chatbotService");
 
 
 
@@ -344,4 +345,35 @@ const changePassword = async (req, res) => {
 
 
 
-module.exports = { register, login, analyzeAnswers , forgotPassword, resetPassword, changePassword };
+
+
+async function chatWithBot(req, res) {
+        // Send the user message to the AI and get the response
+        console.log("reqing")
+        const ques = `I want to ask you a question. If it's about any proggramming language or web development or ui/ux or front end developement  answer it. Otherwise, write me: "خارج از موضوع" Don't write a single word more. and answer should be in persian language.
+
+My question:${req.body.message}`
+        const botReply = await sendMessageToAI(ques);
+        console.log(botReply)
+        // res.write(botReply) 
+        res.send(botReply)
+
+        
+
+        
+}
+
+ 
+
+ 
+
+
+module.exports = {
+    register,
+    login,
+    analyzeAnswers,
+    forgotPassword,
+    resetPassword,
+    changePassword,
+    chatWithBot
+};
