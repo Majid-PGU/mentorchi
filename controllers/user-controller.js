@@ -345,31 +345,15 @@ const changePassword = async (req, res) => {
 
 
 
-
-/*
-async function chatWithBot(req, res) {
-        // Send the user message to the AI and get the response
-        console.log("reqing")
-        const ques = `I want to ask you a question. you are known as proggraming mentor and you should answer the question if it is about technology and computer and any field in computer if question starts with hello or 'سلام' say hello. Otherwise, write me: "خارج از موضوع" Don't write a single word more. and answer should be in persian language.
-
-My question:${req.body.message}`
-        const botReply = await sendMessageToAI(ques);
-        console.log(botReply)
-        // res.write(botReply) 
-        res.send(botReply)
-
-    
-}
-*/
 async function chatWithBot(req, res) {
     try {
         // ساخت پیام سوال برای مدل هوش مصنوعی
         console.log("Requesting AI response...");
         const ques = `You are a programming mentor who specializes in technology, computers, and all fields related to computer science. 
         Your task is to respond to user questions as follows:
-        1. If the user's question starts with "hello" or "سلام", reply with a greeting in Persian, such as "سلام".
+        1. If the user's question starts with "سلام", reply politly.
         2. If the question is about technology, computers, or computer science, provide a concise and accurate answer in Persian.
-        3. For any other question, respond only with: "خارج از موضوع". Do not write anything else.
+        3. For any other question, respond only with: " با عرض پوزش من فقط میتوانم در موضوعات کامپیوتری پاسخگوی شما باشم" . Do not write anything else.
         
         The answer should always be in Persian.
         
